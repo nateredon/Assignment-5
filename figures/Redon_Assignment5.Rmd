@@ -9,12 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-```{r makefig, include = TRUE}
+## Exploratory Figure
+I start by taking a look at the data and choosing two variables I'm interested in. I want to see how things vary by location and decided that the depth the fish were taken from could be fun to look at.  
+```{r make.expl.fig, include = TRUE}
 ## Dependencies
-# install.packages(c("tidyverse","ggplot2","here"))
-packages <- c("tidyverse", "ggplot2", "here")
-lapply(packages, library, character.only = TRUE)
+if(!require("here")){
+    install.packages("here")
+    library(here)
+}
 
 ## Get data
 df <- read.csv(here("data","siscowet.csv"))
@@ -24,54 +26,82 @@ df$wgt[541] <- 1580 # "Fix" the crazy outlier just for this assignment
 df$locID <- as.factor(df$locID)
 
 ## Make exploratory figure, how did sample depth vary by location?
+jpeg("exploratory_fig.jpg") # open file
 plot(pnldep ~ locID, data = df) # Check out depth, looks like there's some variability
+
+# save plot
+dev.off() # close file
+```
+  
+## Expository figure
+I then wanted to clean this up and try out a bunch of new things with ggplot (since I've only used Base R to make graphs so far).  
+
+All in all, I think it's pretty cheesy and I definitely need to change the yellow but I've spent enough time on it already!  
+```{r make.expo.fig, include = TRUE}
+## Dependencies
+if(!require("here")){
+    install.packages("here")
+    library(here)
+}
+
+if(!require("ggplot2")){
+    install.packages("ggplot2")
+    library(ggplot2)
+}
+
+if(!require("ggtext")){
+    install.packages("ggtext")
+    library(ggtext)
+}
+
+## Get data
+df <- read.csv(here("data","siscowet.csv"))
+
+## Wrangle data
+df$wgt[541] <- 1580 # "Fix" the crazy outlier just for this assignment
+df$locID <- as.factor(df$locID)
 
 ## Make expository figure
 # reorder factor levels by length to best represent spread
 df$locID = with(df, reorder(locID, len))
 
+# get axis labels sorted
+fig.loc1 <- here("figures","axis_labels","fb1.png")
+fig.loc2 <- here("figures","axis_labels","fb2.png")
+fig.loc3 <- here("figures","axis_labels","fb3.png")
+fig.loc4 <- here("figures","axis_labels","fb4.png")
+labels <- c(
+  fb1 <- paste0("<img src='",fig.loc1,"' width='30' />"),
+  fb2 <- paste0("<img src='",fig.loc2,"' width='30' />"),
+  fb3 <- paste0("<img src='",fig.loc3,"' width='30' />"),
+  fb4 <- paste0("<img src='",fig.loc4,"' width='30' />")
+)
+
 # draw plot
-(p <- df %>%
-  ggplot(aes(x = locID, y = pnldep, fill = locID) + 
-    geom_violin(trim = F) +
-    xlab("Location") +
-    theme(legend.position="none") +
-    xlab("Location") +
-    ylab("Depth of gillnet panel (m)")))
-  
-p <- ggplot(df, aes(x = factor(locID), y = pnldep))
-p + geom_violin(aes(fill = locID)) +
-    scale_fill_viridis_d() +
-    xlab("Site") +
-    ylab("Gillnet\npanel\ndepth(m)") +
-    labs(color = "Penguin Species",
-         title = "<b>Variability in gillnet panel depth targeting Siscowet Lake Trout in Lake Superior</b><br>
-           <span style = 'font-size:10pt'>Variability across four sites, <span       style='color:#410155'>Grand Marais</span>, <span style='color:#3A6890'>Deer Park </span>, <span style='color:#4DB777'>Blind Sucker</span>, and <span style='color:#FAE600'>Little Lake Harbor</span>.</span>")+
-    theme_minimal() + 
+p <- ggplot(df, aes(x = factor(locID), y = pnldep)) # depth by location
+p + geom_violin(aes(fill = locID)) + # make violin plot
+    scale_fill_viridis_d() + # Viridis colorset
+    scale_x_discrete(name = NULL, position = "top", labels = labels) + # Handle x-axis pos and labels
+    expand_limits(x = 0, y = 0) + # Set origin to 0,0
+    ylab("Gillnet\npanel\ndepth(m)") + # Make y label lines per word
+    # Make title labels
+    labs(color = "Penguin Species", 
+         title = "<b>Variability in gillnet panel depth targeting Siscowet Lake Trout in Lake Superior across four sites</b><br>
+           <span style = 'font-size:10pt'><span       style='color:#410155'>Grand Marais</span>, <span style='color:#3A6890'>Deer Park </span>, <span style='color:#4DB777'>Blind Sucker</span>, and <span style='color:#FAE600'>Little Lake Harbor</span>.</span><br>")+
+    scale_y_reverse() + # Flip the y-axis to make depth chart
+    theme_minimal() + # Minimal theme
     theme(
-      plot.title.position = "plot",
-      plot.title = element_textbox_simple(size=12),
-      axis.title.x = element_blank(),
-      axis.ticks.x = element_blank(),
-      axis.text.x = element_blank(),
-      axis.title.y = element_text(angle = 0, vjust = .5,size=14),
-      axis.text = element_text(size=12),
-      legend.position="none")
+      plot.title.position = "panel", # Put title over plot
+      plot.title = element_textbox_simple(size=12), # Plot font types
+      axis.title.x = element_blank(), # No x-axis title
+      axis.ticks.x = element_blank(), # No x-axis ticks
+      axis.text.x.top = element_markdown(), # x-axis labels exist
+      axis.title.y = element_text(angle = 0, vjust = .6,size=14), # Y-axis label font
+      axis.text = element_text(size=12), # Default axis font
+      legend.position="none") # No legend
 
-  
-
-# violin plot with mean points
-p + stat_summary(fun.y=mean, geom="point", shape=23, size=2)
-# violin plot with median points
-p + stat_summary(fun.y=median, geom="point", size=2, color="red")
-# summary stats
-p + geom_boxplot(width=0.1)
-p + stat_summary(fun.data=mean_sdl, mult=1, 
-                 geom="pointrange", color="red")
-p + geom_jitter(shape=16, position=position_jitter(0.2))
-p + scale_color_viridis_d()
-
-
-
+# save plot
+ggsave("expository_fig.jpg")
 
 ```
+
