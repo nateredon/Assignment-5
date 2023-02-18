@@ -86,7 +86,7 @@ p + geom_violin(aes(fill = locID)) + # make violin plot
     ylab("Gillnet\npanel\ndepth(m)") + # Make y label lines per word
     # Make title labels
     labs(color = "Penguin Species", 
-         title = "<b>Variability in gillnet panel depth targeting Siscowet Lake Trout in Lake Superior across four sites</b><br>
+         title = "<b>Variability in gillnet panel depth for Siscowet in Lake Superior across four sites:</b>
            <span style = 'font-size:10pt'><span       style='color:#410155'>Grand Marais</span>, <span style='color:#3A6890'>Deer Park </span>, <span style='color:#4DB777'>Blind Sucker</span>, and <span style='color:#FAE600'>Little Lake Harbor</span>.</span><br>")+
     scale_y_reverse() + # Flip the y-axis to make depth chart
     theme_minimal() + # Minimal theme
